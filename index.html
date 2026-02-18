@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Scooby-Doo Watchlist</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Manrope:wght@400;600;700&display=swap');
+
+    :root {
+      --turquoise: #16b5a5;
+      --turquoise-dark: #0b8f83;
+      --purple: #5a3292;
+      --orange: #ff8d1f;
+      --ink: #1f1f2f;
+      --ink-soft: #5c5d7c;
+      --card: rgba(255, 255, 255, 0.92);
+      --border: rgba(31, 31, 47, 0.12);
+      --shadow: 0 18px 34px rgba(18, 18, 38, 0.22);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255,141,31,.28), transparent 38%),
+        radial-gradient(circle at 82% 84%, rgba(22,181,165,.25), transparent 36%),
+        linear-gradient(140deg, #0a6f73, var(--purple));
+    }
+
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .header {
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    .header h1 {
+      margin: 0 0 6px;
+      font-family: "Chakra Petch", sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      line-height: 1.1;
+      letter-spacing: .02em;
+    }
+
+    .header p {
+      margin: 0;
+      color: rgba(255,255,255,.9);
+    }
+
+    .status,
+    .error {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .spinner {
+      width: 22px;
+      height: 22px;
+      border: 3px solid rgba(22,181,165,.25);
+      border-top-color: var(--turquoise-dark);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      flex: 0 0 auto;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error {
+      border-left: 6px solid #d43838;
+      color: #7c1e1e;
+      white-space: pre-line;
+    }
+
+    .hidden { display: none !important; }
+
+    .board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .panel {
+      background: var(--card);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.3);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(22,181,165,.14), rgba(255,141,31,.14));
+    }
+
+    .panel-head h2 {
+      margin: 0;
+      font-family: "Chakra Petch", sans-serif;
+      font-size: 1.15rem;
+    }
+
+    .badge {
+      min-width: 34px;
+      padding: 4px 10px;
+      text-align: center;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-weight: 700;
+      font-size: .9rem;
+    }
+
+    .movie-list {
+      list-style: none;
+      margin: 0;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      min-height: 220px;
+    }
+
+    .movie-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px;
+      background: rgba(255,255,255,.82);
+    }
+
+    .movie-title {
+      font-weight: 700;
+      line-height: 1.24;
+    }
+
+    .movie-meta {
+      margin-top: 4px;
+      color: var(--ink-soft);
+      font-size: .82rem;
+    }
+
+    .movie-item.is-watched .movie-title {
+      text-decoration: line-through;
+      text-decoration-thickness: 2px;
+      text-decoration-color: rgba(90,50,146,.55);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .12s ease, filter .16s ease;
+      flex: 0 0 auto;
+    }
+
+    .btn:hover { filter: brightness(1.05); }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-watch {
+      background: var(--turquoise);
+      color: #fff;
+    }
+
+    .btn-undo {
+      background: var(--orange);
+      color: #2b1940;
+    }
+
+    .empty {
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      color: var(--ink-soft);
+      text-align: center;
+      background: rgba(255,255,255,.6);
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      font-size: .8rem;
+      color: rgba(255,255,255,.9);
+    }
+
+    @media (max-width: 920px) {
+      body { padding: 14px; }
+      .board { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <h1>Scooby-Doo Watchlist</h1>
+      <p>Pełnometrażowe animacje Scooby-Doo pobierane dynamicznie z TMDB API.</p>
+    </header>
+
+    <section id="loading" class="status">
+      <div class="spinner" aria-hidden="true"></div>
+      <div>Pobieranie bazy filmów...</div>
+    </section>
+
+    <section id="error" class="error hidden" role="alert"></section>
+
+    <section id="board" class="board hidden">
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Nieobejrzane</h2>
+          <span id="unwatchedCount" class="badge">0</span>
+        </div>
+        <ul id="unwatchedList" class="movie-list"></ul>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2>Obejrzane</h2>
+          <span id="watchedCount" class="badge">0</span>
+        </div>
+        <ul id="watchedList" class="movie-list"></ul>
+      </article>
+    </section>
+
+    <div class="footer-note">This product uses the TMDB API but is not endorsed or certified by TMDB.</div>
+  </main>
+
+  <script>
+    (() => {
+      const API_KEY = "7ed9071a88bf1969385d6d5f5bc34892";
+      const API_KEY_PLACEHOLDER = "TWOJ_KLUCZ_API_TUTAJ";
+      const API_ROOT = "https://api.themoviedb.org/3";
+      const QUERY = "Scooby-Doo";
+      const LANGUAGE = "pl-PL";
+      const STORAGE_KEY = "scooby_watchlist_watched_ids";
+
+      const loadingEl = document.getElementById("loading");
+      const errorEl = document.getElementById("error");
+      const boardEl = document.getElementById("board");
+      const unwatchedListEl = document.getElementById("unwatchedList");
+      const watchedListEl = document.getElementById("watchedList");
+      const unwatchedCountEl = document.getElementById("unwatchedCount");
+      const watchedCountEl = document.getElementById("watchedCount");
+
+      const watchedIds = new Set(loadWatchedIds());
+      const movieNodes = new Map();
+      let movies = [];
+
+      function loadWatchedIds() {
+        try {
+          const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+          if (!Array.isArray(raw)) return [];
+          return [...new Set(raw)].map(Number).filter(Number.isInteger);
+        } catch {
+          return [];
+        }
+      }
+
+      function saveWatchedIds() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...watchedIds]));
+      }
+
+      function setLoading(visible) {
+        loadingEl.classList.toggle("hidden", !visible);
+      }
+
+      function setError(message) {
+        errorEl.textContent = message;
+        errorEl.classList.remove("hidden");
+      }
+
+      function clearError() {
+        errorEl.classList.add("hidden");
+        errorEl.textContent = "";
+      }
+
+      async function fetchSearchPage(page) {
+        const url =
+          `${API_ROOT}/search/movie?api_key=${encodeURIComponent(API_KEY)}` +
+          `&query=${encodeURIComponent(QUERY)}&language=${encodeURIComponent(LANGUAGE)}` +
+          `&page=${page}&include_adult=false`;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          if (res.status === 401) throw new Error("401: nieprawidłowy klucz API.");
+          if (res.status === 429) throw new Error("429: przekroczony limit zapytań do TMDB.");
+          throw new Error(`TMDB zwróciło błąd ${res.status}.`);
+        }
+        return res.json();
+      }
+
+      async function fetchMovieDetails(id) {
+        const url = `${API_ROOT}/movie/${id}?api_key=${encodeURIComponent(API_KEY)}&language=${encodeURIComponent(LANGUAGE)}`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return res.json();
+      }
+
+      async function fetchScoobyFeatureAnimations() {
+        const pages = [1, 2, 3];
+        const payloads = await Promise.all(pages.map(fetchSearchPage));
+
+        const allResults = payloads.flatMap(p => Array.isArray(p.results) ? p.results : []);
+        const uniqueMap = new Map();
+
+        for (const m of allResults) {
+          if (m && typeof m.id === "number" && !uniqueMap.has(m.id)) uniqueMap.set(m.id, m);
+        }
+
+        const candidates = [...uniqueMap.values()]
+          .filter(m => (`${m.title || ""} ${m.original_title || ""}`).toLowerCase().includes("scooby"))
+          .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+          .slice(0, 40);
+
+        const details = await Promise.all(candidates.map(m => fetchMovieDetails(m.id)));
+
+        return details
+          .filter(Boolean)
+          .filter(m => {
+            const isAnimation = Array.isArray(m.genres) && m.genres.some(g => g.id === 16);
+            const isFeature = typeof m.runtime === "number" && m.runtime >= 60;
+            return isAnimation && isFeature;
+          })
+          .map(m => ({
+            id: m.id,
+            title: m.title || m.original_title || "Bez tytułu",
+            original_title: m.original_title || "",
+            release_date: m.release_date || "",
+            runtime: m.runtime || null
+          }))
+          .sort((a, b) => new Date(a.release_date || "1900-01-01") - new Date(b.release_date || "1900-01-01"));
+      }
+
+      function createMovieItem(movie) {
+        const li = document.createElement("li");
+        li.className = "movie-item";
+        li.dataset.id = String(movie.id);
+
+        const info = document.createElement("div");
+        const title = document.createElement("div");
+        title.className = "movie-title";
+        const year = movie.release_date ? movie.release_date.slice(0, 4) : "----";
+        title.textContent = `${movie.title} (${year})`;
+
+        const meta = document.createElement("div");
+        meta.className = "movie-meta";
+        const runtime = movie.runtime ? `${movie.runtime} min` : "czas trwania: brak danych";
+        meta.textContent = movie.original_title && movie.original_title !== movie.title
+          ? `Oryg.: ${movie.original_title} • ${runtime}`
+          : runtime;
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn";
+        btn.dataset.action = "watch";
+
+        info.appendChild(title);
+        info.appendChild(meta);
+        li.appendChild(info);
+        li.appendChild(btn);
+        return li;
+      }
+
+      function updateItemState(node, watched) {
+        const btn = node.querySelector("button");
+        node.classList.toggle("is-watched", watched);
+
+        if (watched) {
+          btn.textContent = "Cofnij";
+          btn.dataset.action = "undo";
+          btn.className = "btn btn-undo";
+          watchedListEl.appendChild(node);
+        } else {
+          btn.textContent = "Oznacz jako obejrzane";
+          btn.dataset.action = "watch";
+          btn.className = "btn btn-watch";
+          unwatchedListEl.appendChild(node);
+        }
+      }
+
+      function updateCounters() {
+        const watched = movies.filter(m => watchedIds.has(m.id)).length;
+        watchedCountEl.textContent = String(watched);
+        unwatchedCountEl.textContent = String(movies.length - watched);
+      }
+
+      function renderEmptyStates() {
+        document.querySelectorAll(".empty").forEach(el => el.remove());
+
+        if (unwatchedListEl.children.length === 0) {
+          const li = document.createElement("li");
+          li.className = "empty";
+          li.textContent = "Brak filmów na liście nieobejrzanych.";
+          unwatchedListEl.appendChild(li);
+        }
+
+        if (watchedListEl.children.length === 0) {
+          const li = document.createElement("li");
+          li.className = "empty";
+          li.textContent = "Brak obejrzanych filmów.";
+          watchedListEl.appendChild(li);
+        }
+      }
+
+      function renderAll() {
+        unwatchedListEl.innerHTML = "";
+        watchedListEl.innerHTML = "";
+        movieNodes.clear();
+
+        for (const movie of movies) {
+          const node = createMovieItem(movie);
+          movieNodes.set(movie.id, node);
+          updateItemState(node, watchedIds.has(movie.id));
+        }
+
+        updateCounters();
+        renderEmptyStates();
+      }
+
+      function onListClick(event) {
+        const btn = event.target.closest("button[data-action]");
+        if (!btn) return;
+
+        const item = btn.closest(".movie-item");
+        if (!item) return;
+
+        const id = Number(item.dataset.id);
+        if (!Number.isInteger(id)) return;
+
+        if (btn.dataset.action === "watch") watchedIds.add(id);
+        else watchedIds.delete(id);
+
+        saveWatchedIds();
+        updateItemState(item, watchedIds.has(id));
+        updateCounters();
+        renderEmptyStates();
+      }
+
+      unwatchedListEl.addEventListener("click", onListClick);
+      watchedListEl.addEventListener("click", onListClick);
+
+      async function init() {
+        clearError();
+        setLoading(true);
+        boardEl.classList.add("hidden");
+
+        if (!API_KEY || API_KEY.trim() === "" || API_KEY === API_KEY_PLACEHOLDER) {
+          setLoading(false);
+          setError("Uzupełnij stałą API_KEY swoim kluczem TMDB.");
+          return;
+        }
+
+        try {
+          movies = await fetchScoobyFeatureAnimations();
+          if (movies.length === 0) {
+            throw new Error('Brak wyników dla pełnometrażowych animacji "Scooby-Doo".');
+          }
+          renderAll();
+          boardEl.classList.remove("hidden");
+        } catch (err) {
+          setError(`Nie udało się pobrać filmów.\n${err.message}`);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
