@@ -151,6 +151,37 @@
       background: rgba(255,255,255,.82);
     }
 
+    .movie-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .movie-poster {
+      width: 46px;
+      height: 68px;
+      border-radius: 8px;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255,255,255,.45);
+      box-shadow: 0 4px 10px rgba(31,31,47,.2);
+      object-fit: cover;
+      background: rgba(90,50,146,.12);
+    }
+
+    .movie-poster-fallback {
+      display: grid;
+      place-items: center;
+      color: var(--ink-soft);
+      font-size: .66rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .movie-text {
+      min-width: 0;
+    }
+
     .movie-title {
       font-weight: 700;
       line-height: 1.24;
@@ -217,7 +248,7 @@
   <main class="app">
     <header class="header">
       <h1>Scooby-Doo Watchlist</h1>
-      <p>Pełnometrażowe animacje Scooby-Doo pobierane dynamicznie z TMDB API.</p>
+      <p>Scooby.</p>
     </header>
 
     <section id="loading" class="status">
@@ -253,6 +284,7 @@
       const API_KEY = "7ed9071a88bf1969385d6d5f5bc34892";
       const API_KEY_PLACEHOLDER = "TWOJ_KLUCZ_API_TUTAJ";
       const API_ROOT = "https://api.themoviedb.org/3";
+      const IMAGE_ROOT = "https://image.tmdb.org/t/p/w92";
       const QUERY = "Scooby-Doo";
       const LANGUAGE = "pl-PL";
       const STORAGE_KEY = "scooby_watchlist_watched_ids";
@@ -349,7 +381,8 @@
             title: m.title || m.original_title || "Bez tytułu",
             original_title: m.original_title || "",
             release_date: m.release_date || "",
-            runtime: m.runtime || null
+            runtime: m.runtime || null,
+            poster_path: m.poster_path || null
           }))
           .sort((a, b) => new Date(a.release_date || "1900-01-01") - new Date(b.release_date || "1900-01-01"));
       }
@@ -360,6 +393,20 @@
         li.dataset.id = String(movie.id);
 
         const info = document.createElement("div");
+        info.className = "movie-info";
+        const poster = movie.poster_path ? document.createElement("img") : document.createElement("div");
+        poster.className = movie.poster_path ? "movie-poster" : "movie-poster movie-poster-fallback";
+        if (movie.poster_path) {
+          poster.src = `${IMAGE_ROOT}${movie.poster_path}`;
+          poster.alt = `Plakat: ${movie.title}`;
+          poster.loading = "lazy";
+          poster.decoding = "async";
+        } else {
+          poster.textContent = "Brak";
+          poster.setAttribute("aria-label", `Brak plakatu dla: ${movie.title}`);
+        }
+        const textWrap = document.createElement("div");
+        textWrap.className = "movie-text";
         const title = document.createElement("div");
         title.className = "movie-title";
         const year = movie.release_date ? movie.release_date.slice(0, 4) : "----";
@@ -377,8 +424,10 @@
         btn.className = "btn";
         btn.dataset.action = "watch";
 
-        info.appendChild(title);
-        info.appendChild(meta);
+        textWrap.appendChild(title);
+        textWrap.appendChild(meta);
+        info.appendChild(poster);
+        info.appendChild(textWrap);
         li.appendChild(info);
         li.appendChild(btn);
         return li;
